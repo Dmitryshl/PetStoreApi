@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import java.util.List;
+
 import static io.qameta.allure.Allure.step;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -99,7 +101,8 @@ public class TestPet {
     @CsvSource({
             "214, Yasha, available",
             "215, Plusha, pending,",
-            "216, Bosha, sold"
+            "216, Bosha, sold",
+            "218, Wrong, Illegal"
     })
     @Feature("Pet")
     @Severity(SeverityLevel.CRITICAL)
@@ -118,16 +121,20 @@ public class TestPet {
                         .post(BASE_URL + "/pet"));
 
         String responseBody = response.getBody().asString();
+        List<String> validStatus = List.of("available","pending","sold");
 
-        step("Проверить что статус код ответа = 200", () ->
+        step("Проверить что статус код ответа = 200 и соотвествие параметров питомца", () -> {
+            if (validStatus.contains(status)) {
                 assertEquals(200, response.getStatusCode(),
-                        "Код ответа не совпал с ожидаемым. Ответ: " + responseBody)
-        );
-        step("Проверка параметров созданного питомца", () -> {
-                    Pet createdPet = response.as(Pet.class);
-                    assertEquals(pet.getId(),createdPet.getId(), "id не совпадает");
-                    assertEquals(pet.getName(),createdPet.getName(), "имя не совпадает");
-                    assertEquals(pet.getStatus(),createdPet.getStatus(), "статус не совпадает");
-                });
+                        "Код ответа не совпал с ожидаемым. Ответ: " + responseBody);
+                Pet createdPet = response.as(Pet.class);
+                assertEquals(pet.getId(),createdPet.getId(), "id не совпадает");
+                assertEquals(pet.getName(),createdPet.getName(), "имя не совпадает");
+                assertEquals(pet.getStatus(),createdPet.getStatus(), "статус не совпадает");
+            } else {
+                assertEquals(400, response.getStatusCode(),
+                        "Код ответа не 400 при не правильном статусе");
+            }
+        });
     }
 }
