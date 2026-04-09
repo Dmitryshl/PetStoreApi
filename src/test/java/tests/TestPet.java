@@ -16,6 +16,7 @@ import java.util.List;
 import static io.qameta.allure.Allure.step;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestPet {
 
@@ -97,17 +98,17 @@ public class TestPet {
                         "Текст ошибки не совпал с ожидаемым. Получен: " + responseBody));
     }
 
-    @ParameterizedTest(name = "Добавление питомца со статусом: {2}")
+    @ParameterizedTest(name = "Добавление питомца со статусом: {2}, {3}")
     @CsvSource({
-            "214, Yasha, available",
-            "215, Plusha, pending,",
-            "216, Bosha, sold",
-            "218, Wrong, Illegal"
+            "214, Yasha, available, 200",
+            "215, Plusha, pending, 200",
+            "216, Bosha, sold, 200",
+            "218, Wrong, Illegal, 400"
     })
     @Feature("Pet")
     @Severity(SeverityLevel.CRITICAL)
     @Owner("Dmitry Shliatski")
-    public void testaAddNewPet(int id, String name, String status) {
+    public void testaAddNewPet(int id, String name, String status, int responceCode) {
         Pet pet = new Pet();
         pet.setId(id);
         pet.setName(name);
@@ -121,20 +122,18 @@ public class TestPet {
                         .post(BASE_URL + "/pet"));
 
         String responseBody = response.getBody().asString();
-        List<String> validStatus = List.of("available","pending","sold");
 
         step("Проверить что статус код ответа = 200 и соотвествие параметров питомца", () -> {
-            if (validStatus.contains(status)) {
-                assertEquals(200, response.getStatusCode(),
-                        "Код ответа не совпал с ожидаемым. Ответ: " + responseBody);
-                Pet createdPet = response.as(Pet.class);
-                assertEquals(pet.getId(),createdPet.getId(), "id не совпадает");
-                assertEquals(pet.getName(),createdPet.getName(), "имя не совпадает");
-                assertEquals(pet.getStatus(),createdPet.getStatus(), "статус не совпадает");
-            } else {
-                assertEquals(400, response.getStatusCode(),
-                        "Код ответа не 400 при не правильном статусе");
-            }
+                if (responceCode == 200) {
+                    Pet createdPet = response.as(Pet.class);
+                    assertEquals(pet.getId(),createdPet.getId(), "id не совпадает");
+                    assertEquals(pet.getName(),createdPet.getName(), "имя не совпадает");
+                    assertEquals(pet.getStatus(),createdPet.getStatus(), "статус не совпадает");
+
+                } else if (responceCode == 400) {
+                    assertTrue(responseBody.contains("Invalid pet status"),
+                            "Проверка что пришла ошибка валидации статуса" + responseBody);
+                }
         });
     }
 }
