@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-import java.util.List;
 
 import static io.qameta.allure.Allure.step;
 import static io.restassured.RestAssured.given;
@@ -132,7 +131,7 @@ public class TestPet {
 
                 } else if (responceCode == 400) {
                     assertTrue(responseBody.contains("Invalid pet status"),
-                            "Проверка что пришла ошибка валидации статуса" + responseBody);
+                            "Проверка что стату не валидный не прошла" + responseBody);
                 }
         });
     }
